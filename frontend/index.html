@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSCS Fall Detection</title>
+  <style>
+    :root{--bg:#f7f6f2;--card:#fbfbf9;--line:#d8d2c7;--text:#1f1d18;--muted:#6f6a61;--brand:#01696f;--brand2:#0d4f54;--ok:#2e6e24;--warn:#b07a00;--bad:#a13544;--shadow:0 18px 60px rgba(26,22,18,.08);--r:22px}
+    *{box-sizing:border-box} html,body{margin:0;padding:0}
+    body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#faf9f6 0%,#f2efe9 100%);color:var(--text);line-height:1.6}
+    .page{width:min(1200px,calc(100% - 32px));margin:0 auto;padding:28px 0 56px}
+    .hero,.layout{display:grid;gap:24px}.hero{grid-template-columns:1.15fr .85fr;margin-bottom:24px}.layout{grid-template-columns:1.05fr .95fr}
+    .card{background:rgba(251,251,249,.88);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:blur(8px)}
+    .hero-copy{padding:28px}.hero-panel{padding:22px;display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(circle at top right,rgba(1,105,111,.12),transparent 42%),rgba(251,251,249,.92)}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:rgba(1,105,111,.08);color:var(--brand);font-size:13px;font-weight:700;letter-spacing:.02em}
+    h1{margin:16px 0 12px;font-size:clamp(2rem,3.5vw,3.8rem);line-height:1.02;letter-spacing:-.04em}
+    .lead{margin:0;color:var(--muted);font-size:1.02rem;max-width:62ch}
+    .hero-grid,.grid-2,.metrics{display:grid;gap:12px}.hero-grid{grid-template-columns:repeat(3,1fr);margin-top:22px}.grid-2{grid-template-columns:repeat(2,1fr)}.metrics{grid-template-columns:repeat(2,1fr);margin-bottom:18px}
+    .mini,.input-card,.metric,.status-box,.arch-item{border:1px solid var(--line);background:#fff}.mini{border-radius:18px;padding:14px;background:linear-gradient(180deg,#fff 0%,#f8f6f1 100%)} .mini .k,.metric .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.mini .v,.metric .value{margin-top:8px;font-size:1.1rem;font-weight:700}.metric .value{font-size:1.45rem;font-weight:800;letter-spacing:-.03em}
+    .section{padding:22px;margin-bottom:24px}.section h3{margin:0 0 6px;font-size:1.15rem}.section .sub{margin:0 0 18px;color:var(--muted);font-size:.95rem}
+    .input-card{padding:14px;border-radius:18px}.input-card label{display:block;font-size:.85rem;font-weight:700;margin-bottom:8px}.input-card textarea,.input-card input{width:100%;border:1px solid var(--line);border-radius:14px;background:#fcfbf8;color:var(--text);padding:12px 14px;font:inherit}.input-card textarea{resize:vertical;min-height:96px}.input-card input{min-height:unset}.helper{display:block;margin-top:8px;color:var(--muted);font-size:.82rem}
+    .button-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px} button{border:0;border-radius:16px;padding:14px 18px;font:inherit;font-weight:700;cursor:pointer;transition:transform .15s ease,opacity .15s ease,background .2s ease} button:hover{transform:translateY(-1px)} button:disabled{opacity:.65;cursor:not-allowed;transform:none}.primary{background:var(--brand);color:#fff}.secondary{background:#ece7df;color:var(--text)}.ghost{background:transparent;color:var(--brand);border:1px solid rgba(1,105,111,.22)}
+    .response{min-height:180px;padding:16px;background:#171614;color:#f4f1ea;border-radius:18px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:.92rem;border:1px solid #2d2a25}
+    .notice{padding:14px 16px;border-radius:18px;margin-top:14px;font-size:.93rem;border:1px solid transparent}.notice.info{background:rgba(1,105,111,.08);border-color:rgba(1,105,111,.18);color:var(--brand2)}.notice.warn{background:rgba(176,122,0,.1);border-color:rgba(176,122,0,.18);color:#7b5a00}.notice.error{background:rgba(161,53,68,.1);border-color:rgba(161,53,68,.2);color:#8a2638}
+    .status-pill{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:rgba(46,110,36,.1);color:var(--ok);font-size:13px;font-weight:700}.status-stack{display:grid;gap:12px;margin-top:10px}.status-box{padding:14px 16px;border-radius:18px}.status-box strong,.arch-item strong{display:block;margin-bottom:4px}.arch-grid{display:grid;gap:12px}.arch-item{padding:14px 16px;border-radius:18px;background:linear-gradient(180deg,#fff 0%,#f8f4ee 100%)}.footer-note{margin-top:12px;color:var(--muted);font-size:.88rem}
+    @media (max-width:980px){.hero,.layout,.hero-grid,.grid-2,.metrics{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="card hero-copy">
+        <span class="eyebrow">DSCS wearable inference · FastAPI live</span>
+        <h1>DSCS fall detection with live Render inference.</h1>
+        <p class="lead">Upload a CSV file or paste a full JSON body, then send it to the live backend for prediction.</p>
+        <div class="hero-grid">
+          <div class="mini"><div class="k">Input shape</div><div class="v">600 × 6</div></div>
+          <div class="mini"><div class="k">Classes</div><div class="v">Fall / ADL</div></div>
+          <div class="mini"><div class="k">Backend</div><div class="v">Render live</div></div>
+        </div>
+      </div>
+      <div class="card hero-panel">
+        <div>
+          <h2>Live deployment status</h2>
+          <p class="sub">Connected to your deployed endpoint.</p>
+          <div class="status-stack">
+            <div class="status-box"><strong>Predict endpoint</strong><div>https://dcsc-fall-detection.onrender.com/predict</div></div>
+            <div class="status-box"><strong>File upload</strong><div>Upload a CSV file with 3600 values for inference.</div></div>
+          </div>
+        </div>
+        <div class="status-pill">Ready for Vercel deployment</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div>
+        <div class="card section">
+          <h3>Detection demo</h3>
+          <p class="sub">Choose a CSV file or paste JSON, then send the request.</p>
+
+          <div class="grid-2">
+            <div class="input-card">
+              <label for="csvInput">Upload CSV file</label>
+              <input id="csvInput" type="file" accept=".csv" />
+              <span class="helper">CSV should contain 3600 numeric values or 600 rows with 6 columns.</span>
+            </div>
+            <div class="input-card">
+              <label for="countField">Current value count</label>
+              <input id="countField" type="text" readonly value="0" />
+              <span class="helper">The backend accepts exactly 3600 values for one SisFall window.</span>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-top:14px;">
+            <div class="input-card" style="grid-column:1 / -1;">
+              <label for="jsonInput">Prediction request JSON</label>
+              <textarea id="jsonInput" spellcheck="false">{
+  "values": []
+}</textarea>
+              <span class="helper">Expected format: {"values": [...3600 numbers...]}</span>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button class="primary" id="sendBtn">Send prediction request</button>
+            <button class="secondary" id="sampleBtn">Generate 3600-value sample</button>
+            <button class="ghost" id="formatBtn">Format JSON</button>
+          </div>
+
+          <div id="notice" class="notice info">Upload a CSV file or generate a sample to start.</div>
+        </div>
+
+        <div class="card section">
+          <h3>DSCS architecture</h3>
+          <p class="sub">A quick view of the project pipeline.</p>
+          <div class="arch-grid">
+            <div class="arch-item"><strong>6-channel sensor segment</strong> Three-axis acceleration and three-axis gyroscope signals enter the model as a segmented time-series window.</div>
+            <div class="arch-item"><strong>Feature learning</strong> Convolution layers and pooling stages extract temporal patterns from the sensor channels.</div>
+            <div class="arch-item"><strong>Prediction head</strong> The combined features are mapped to Fall or ADL output probabilities.</div>
+          </div>
+          <div class="footer-note">This frontend sends requests only to your live backend URL.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card section">
+          <h3>Inference response</h3>
+          <p class="sub">Response data returned by the live Render backend.</p>
+          <div class="metrics">
+            <div class="metric"><div class="label">Prediction</div><div class="value" id="predictionValue">—</div></div>
+            <div class="metric"><div class="label">Confidence</div><div class="value" id="confidenceValue">—</div></div>
+            <div class="metric"><div class="label">Label</div><div class="value" id="labelValue">—</div></div>
+            <div class="metric"><div class="label">Request status</div><div class="value" id="statusValue">Idle</div></div>
+          </div>
+          <div class="response" id="responseBox">No request sent yet.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API_URL = 'https://dcsc-fall-detection.onrender.com/predict';
+    const jsonInput = document.getElementById('jsonInput');
+    const csvInput = document.getElementById('csvInput');
+    const countField = document.getElementById('countField');
+    const notice = document.getElementById('notice');
+    const responseBox = document.getElementById('responseBox');
+    const predictionValue = document.getElementById('predictionValue');
+    const confidenceValue = document.getElementById('confidenceValue');
+    const labelValue = document.getElementById('labelValue');
+    const statusValue = document.getElementById('statusValue');
+    const sendBtn = document.getElementById('sendBtn');
+    const sampleBtn = document.getElementById('sampleBtn');
+    const formatBtn = document.getElementById('formatBtn');
+
+    let csvValues = [];
+
+    function setNotice(type, text) { notice.className = 'notice ' + type; notice.textContent = text; }
+    function resetMetrics() { predictionValue.textContent = '—'; confidenceValue.textContent = '—'; labelValue.textContent = '—'; }
+
+    function updateCountFromJson() {
+      try {
+        const parsed = JSON.parse(jsonInput.value);
+        const count = Array.isArray(parsed.values) ? parsed.values.length : 0;
+        if (!csvValues.length) countField.value = String(count);
+        if (count === 3600) setNotice('info', 'Valid input shape detected.');
+        else setNotice('warn', 'The values array should contain exactly 3600 numbers.');
+      } catch (err) {
+        if (!csvValues.length) countField.value = 'Invalid JSON';
+        setNotice('error', 'JSON formatting error. Fix the body before sending the request.');
+      }
+    }
+
+    function updateFromCsvFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result || '');
+        const nums = text.split(/[\\s,\\n\\r]+/).map(v => v.trim()).filter(Boolean).map(Number).filter(v => Number.isFinite(v));
+        csvValues = nums;
+        countField.value = String(nums.length);
+        jsonInput.value = JSON.stringify({ values: nums }, null, 2);
+        if (nums.length === 3600) setNotice('info', 'CSV loaded successfully and matched the required 3600 values.');
+        else setNotice('warn', 'CSV loaded, but it should contain exactly 3600 numbers for this model.');
+      };
+      reader.readAsText(file);
+    }
+
+    jsonInput.addEventListener('input', updateCountFromJson);
+    csvInput.addEventListener('change', e => { const file = e.target.files && e.target.files[0]; if (file) updateFromCsvFile(file); });
+
+    formatBtn.addEventListener('click', () => {
+      try { const parsed = JSON.parse(jsonInput.value); jsonInput.value = JSON.stringify(parsed, null, 2); updateCountFromJson(); }
+      catch (err) { setNotice('error', 'Cannot format because the JSON body is currently invalid.'); }
+    });
+
+    sampleBtn.addEventListener('click', () => {
+      const sample = { values: Array(3600).fill(0) };
+      jsonInput.value = JSON.stringify(sample, null, 2);
+      csvValues = sample.values;
+      countField.value = '3600';
+      setNotice('info', 'A 3600-value sample payload was generated for testing.');
+    });
+
+    sendBtn.addEventListener('click', async () => {
+      let payload;
+      try { payload = JSON.parse(jsonInput.value); }
+      catch (err) { statusValue.textContent = 'Invalid JSON'; responseBox.textContent = 'JSON parsing error: ' + err.message; setNotice('error', 'The request was not sent because the JSON body is invalid.'); resetMetrics(); return; }
+
+      statusValue.textContent = 'Sending';
+      responseBox.textContent = 'Sending request to ' + API_URL + ' ...';
+      setNotice('info', 'Request in progress. Waiting for live backend response.');
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        responseBox.textContent = JSON.stringify(data, null, 2);
+        statusValue.textContent = String(res.status);
+        if (res.ok && typeof data === 'object' && data !== null && 'prediction' in data) {
+          predictionValue.textContent = String(data.prediction);
+          confidenceValue.textContent = typeof data.confidence === 'number' ? data.confidence.toFixed(4) : String(data.confidence ?? '—');
+          labelValue.textContent = String(data.label ?? '—');
+          setNotice('info', 'Prediction response received successfully from the Render backend.');
+        } else {
+          resetMetrics();
+          setNotice('warn', 'The backend responded, but it returned a validation or application message instead of a prediction result.');
+        }
+      } catch (err) {
+        resetMetrics();
+        statusValue.textContent = 'Network error';
+        responseBox.textContent = err.message;
+        setNotice('error', 'Request failed. Check the Render URL and CORS configuration.');
+      } finally { sendBtn.disabled = false; }
+    });
+
+    updateCountFromJson();
+  </script>
+</body>
+</html>
